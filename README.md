@@ -5,6 +5,6 @@ ecosystem.
 
 ## Building
 
-run from terminal 
+Run the following command from your terminal.
 
     docker build -t oedev .

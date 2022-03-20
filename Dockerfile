@@ -22,3 +22,7 @@ RUN apt-get install -y \
 RUN ~/.cargo/bin/cargo install mdbook
 
 
+# Tools
+RUN ~/.cargo/bin/cargo install oecli
+
+
