@@ -55,4 +55,4 @@ RUN sudo apt-get install gh -y
 
 RUN sudo apt-get install -y openssh-server
 
-ENTRYPOINT service ssh restart && bash
+ENTRYPOINT sudo service ssh restart && bash
