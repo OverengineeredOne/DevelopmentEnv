@@ -5,6 +5,16 @@ EXPOSE 22
 RUN apt-get update && \
 	apt-get -y install sudo
 
+# Note for the Rust instalation, Since we may want to mount the home directory to a volume, rust
+# will not install under the default. We need to set the environment variables to update the 
+# toolchain and cargo path for the root user. This will allow us to install it under opt.
+
+ENV CARGO_HOME /opt/.cargo
+ENV RUSTUP_HOME /opt/.rust
+ENV PATH ${PATH}:/opt/.cargo/bin
+RUN echo "PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin::/opt/.cargo/bin\"\nCARGO_HOME=\"/opt/.cargo\"\nRUSTUP_HOME=\"/opt/.rust\"" \
+	>> /etc/environment
+
 # Setup User Account
 ENV user oe
 RUN useradd -m -d /home/${user} ${user} && \
@@ -22,26 +32,14 @@ RUN sudo apt-get update
 # Basic dev tools
 RUN DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends tzdata
 RUN sudo apt-get install -y \
+	apt-utils \
 	build-essential \
-    curl
+    curl \
+	openssh-server \
+	nodejs \
+	npm
 RUN sudo apt-get update
 RUN sudo apt-get install -y neovim
-
-# Rust
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
-
-# Web
-RUN ~/.cargo/bin/cargo install trunk
-RUN sudo apt-get install -y \
-    nodejs \
-    npm
-
-# Docs
-RUN ~/.cargo/bin/cargo install mdbook
-
-# Tools
-RUN ~/.cargo/bin/cargo install oecli
 
 # Github Cli
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -51,8 +49,20 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/g
 RUN sudo apt-get update
 RUN sudo apt-get install gh -y
 
+# Rust
+RUN curl https://sh.rustup.rs -sSf | sudo bash -s -- -y
+RUN echo 'source $CARGO_HOME/env' >> $HOME/.bashrc
+RUN sudo chown -R ${user}:${user} /opt/.cargo/
+RUN sudo chown -R ${user}:${user} /opt/.rust/
+
+# Web
+RUN ${CARGO_HOME}/bin/cargo install trunk
+
+# Docs
+RUN ${CARGO_HOME}/bin/cargo install mdbook
+
+# Other Tools
+RUN ${CARGO_HOME}/bin/cargo install oecli
+
 # Enable SSH
-
-RUN sudo apt-get install -y openssh-server
-
 ENTRYPOINT sudo service ssh restart && bash
